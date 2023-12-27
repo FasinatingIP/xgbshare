@@ -280,17 +280,18 @@ import random
 date_choose=st.date_input(label="choose",value=date.today(),label_visibility="collapsed")
 today_str=date_choose.strftime("%Y%m%d")
 if st.button('更新图'):
-    col1, col2, col3= st.columns(3)
-    for i in range(symparams.shape[0]):
-        # i=7
-        ncol=i%3
-        with eval('col'+str(ncol+1)):
-            df=candleplot(symbol=symparams.iloc[i,0],startdate=symparams.iloc[i,1],enddate=today_str,timew=symparams.iloc[i,2],p_day=symparams.iloc[i,3])
-            st.dataframe(df.tail(5),
-                        column_config={
-                            "trade_date": st.column_config.DateColumn(format="YYYY-MM-DD")
-                })
-            time.sleep(random.uniform(1,5))    
+    st.write("hh") 
+    # col1, col2, col3= st.columns(3)
+    # for i in range(symparams.shape[0]):
+    #     # i=7
+    #     ncol=i%3
+    #     with eval('col'+str(ncol+1)):
+    #         df=candleplot(symbol=symparams.iloc[i,0],startdate=symparams.iloc[i,1],enddate=today_str,timew=symparams.iloc[i,2],p_day=symparams.iloc[i,3])
+    #         st.dataframe(df.tail(5),
+    #                     column_config={
+    #                         "trade_date": st.column_config.DateColumn(format="YYYY-MM-DD")
+    #             })
+    #         time.sleep(random.uniform(1,5))    
 else:
     st.write("")    
 
