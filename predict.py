@@ -55,9 +55,6 @@ def getdata(symbol,startdate,enddate):
 # 依据特征重要性，选择low high open来进行预测close
 # 数据选择t-n, ...., t-2 t-1 与 t 来预测未来 t+m
 # 转换原始数据为新的特征列来进行预测,time_window可以用来调试用前n次的数据来预测,p_day预测后m次的数据
-from sklearn.metrics import r2_score
-
-
 def series_to_supervised(data,time_window,p_day=3):
     #data=stock_zh_a_hist_df
     #data=all_data_set.copy()
@@ -189,8 +186,8 @@ def predicty(data_set_process,scaled_data,yname,timew,p_day):
     #转换成股价
     bb['predict_'+yname]=bb['y_pred_xgb_t']*(bb['max']-bb['min'])+bb['min']
     bb.loc[pd.isna(bb[ycol]),ycol]=bb['predict_'+yname]
-    R2=r2_score(bb[ycol],bb['predict_'+yname])
-    return ycol,bb.iloc[-1:,:],R2
+    # R2=r2_score(bb[ycol],bb['predict_'+yname])
+    return ycol,bb.iloc[-1:,:]
 
 def whole(symbol,startdate,enddate,timew,p_day):
     all_data_set=getdata(symbol=symbol,startdate=startdate,enddate=enddate)
@@ -200,10 +197,10 @@ def whole(symbol,startdate,enddate,timew,p_day):
     predictdata=pd.DataFrame()
     for i in range(1,p_day+1):
         # i=1
-        ycol,bb_close,R2=predicty(data_set_process,scaled_data,yname='close',timew=timew,p_day=i)
-        ycol,bb_high,R2=predicty(data_set_process,scaled_data,yname='high',timew=timew,p_day=i)
-        ycol,bb_low,R2=predicty(data_set_process,scaled_data,yname='low',timew=timew,p_day=i)
-        ycol,bb_open,R2=predicty(data_set_process,scaled_data,yname='open',timew=timew,p_day=i)
+        ycol,bb_close=predicty(data_set_process,scaled_data,yname='close',timew=timew,p_day=i)
+        ycol,bb_high=predicty(data_set_process,scaled_data,yname='high',timew=timew,p_day=i)
+        ycol,bb_low=predicty(data_set_process,scaled_data,yname='low',timew=timew,p_day=i)
+        ycol,bb_open=predicty(data_set_process,scaled_data,yname='open',timew=timew,p_day=i)
         
         predict=pd.DataFrame({'open':bb_open.loc[:,'open(t+%d)'%i][-1],
                               'close':bb_close.loc[:,'close(t+%d)'%i][-1],
@@ -215,7 +212,7 @@ def whole(symbol,startdate,enddate,timew,p_day):
 
     df=pd.concat([all_data_set[['open','close','low','high']],predictdata],axis=0)[-30:]
     
-    return df,R2 
+    return df
 
 import streamlit as st 
 
@@ -231,7 +228,7 @@ from pyecharts.charts import Candlestick,Grid
 import streamlit_echarts
 from pyecharts import options as opts
 def candleplot(symbol,startdate,enddate,timew,p_day):
-    df,R2 =whole(symbol,startdate,enddate,timew,p_day)#
+    df =whole(symbol,startdate,enddate,timew,p_day)#
     candle=(Candlestick()
         .add_xaxis(xaxis_data=[i.strftime("%Y-%m-%d") for i in df.index])
         .add_yaxis(series_name=symbol, y_axis=[list(row) for row in df.values])

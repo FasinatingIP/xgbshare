@@ -3,7 +3,6 @@ pandas==1.1.3
 akshare==1.11.97
 requests==2.31.0
 xgboost==2.0.2
-sklearn==1.3.2
 pyecharts==2.0.3
 streamlit_echarts==0.4.0
 
