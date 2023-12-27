@@ -5,60 +5,68 @@ Created on Thu Dec 14 14:43:15 2023
 @author: pan
 """
 #conda activate streamlit_test
-#cd /d d:
+#cd /d H:/git_xgbshare/xgbshare
 #streamlit run predict.py
 import akshare as ak
-import datetime
-
-from datetime import datetime,timedelta
+from datetime import date,timedelta,datetime
 import pandas as pd 
 import requests
-today = datetime.today()
-today_str = today.strftime("%Y%m%d")
+
+import streamlit as st 
+# import os
+# st.write(os.getcwd())   #取得当前工作目录
+#os.chdir(r'H:\git_xgbshare\xgbshare')
+#全局配置
+st.set_page_config(
+    page_title="million",    #页面标题
+    page_icon=":rainbow:",        #icon:emoji":rainbow:"
+    layout="wide",                #页面布局
+    initial_sidebar_state="auto"  #侧边栏
+)
+
+
+# today = datetime.today()
+# today_str = today.strftime("%Y%m%d")
+
+cte = {"日期":"trade_date","开盘":"open","收盘":"close","最高":"high","最低":"low",
+          "成交量":"vol",'最新价':"close","今开":"open",'代码':'ts_code','名称':'name',
+          "成交额":"amount","振幅":"pct_rag","涨跌幅":"pct_chg","涨跌额":"change","换手率":"turnover"}
+
+
+
+def translatecolname(df,fromto):
+    edited_col=df.columns.to_list()
+    if fromto=='cte':
+        repl=cte
+    else:
+        pass
+    tran_col=[repl[i] if i in repl else i for i in edited_col]
+    return tran_col
+
 
 def getdata(symbol,startdate,enddate):
-    #symbol='588800'
+    #symbol='588200'
     if str(symbol)[0]=="5":
-        #代码后3位  代码
-        url="https://hq.stock.sohu.com/mkline/cn/"+symbol[3:]+"/cn_"+symbol+"-10_2.html?"
-        res=requests.get(url)
-        start=res.text.find("(")+len("(")
-        end=res.text.find(")")
-        ressplit=eval(res.text[start:end]).get("dataBasic")
-        stock_zh_a_hist_df=pd.DataFrame(ressplit,columns=['trade_date','open','close','high','low','vol','amount','unknown','change','pct_chg']).sort_values('trade_date',ascending=True)
-        stock_zh_a_hist_df[['open','close','high','low']]=stock_zh_a_hist_df[['open','close','high','low']].apply(lambda x :pd.to_numeric(x),axis=1)
-        stock_zh_a_hist_df=stock_zh_a_hist_df.loc[lambda x:x['trade_date']<=enddate]
+        historydata = ak.fund_etf_hist_em(symbol=symbol, period="daily", start_date=startdate, end_date=enddate, adjust="")
     else:
-        stock_zh_a_hist_df = ak.stock_zh_a_hist(symbol=symbol, period="daily", start_date=startdate, end_date=enddate, adjust="")
+        historydata = ak.stock_zh_a_hist(symbol=symbol, period="daily", start_date=startdate, end_date=enddate, adjust="")
         # stock_zh_a_hist_df.info()
-        cte = {"日期":"trade_date","开盘":"open","收盘":"close","最高":"high","最低":"low",
-                  "成交量":"vol",'最新价':"close","今开":"open",'代码':'ts_code','名称':'name',
-                  "成交额":"amount","振幅":"pct_rag","涨跌幅":"pct_chg","涨跌额":"change","换手率":"turnover"}
-    
-        def translatecolname(df,fromto):
-            edited_col=df.columns.to_list()
-            if fromto=='cte':
-                repl=cte
-            else:
-                pass
-            tran_col=[repl[i] if i in repl else i for i in edited_col]
-            return tran_col
         
-        stock_zh_a_hist_df.columns=translatecolname(stock_zh_a_hist_df,fromto='cte')
-    
+    historydata.columns=translatecolname(historydata,fromto='cte')
+    # type(historydata.trade_date[0])
     #把日期设为index    
-    stock_zh_a_hist_df["trade_date"] = pd.to_datetime(stock_zh_a_hist_df["trade_date"])       # 日期object: to datetime
-    stock_zh_a_hist_df.set_index("trade_date", inplace=True, drop=True) # 把index设为索引
+    historydata["trade_date"] = pd.to_datetime(historydata["trade_date"])
+    historydata.set_index("trade_date", inplace=True, drop=True) # 把index设为索引
 
-    return stock_zh_a_hist_df
+    return historydata
 
 # 依据特征重要性，选择low high open来进行预测close
 # 数据选择t-n, ...., t-2 t-1 与 t 来预测未来 t+m
 # 转换原始数据为新的特征列来进行预测,time_window可以用来调试用前n次的数据来预测,p_day预测后m次的数据
-def series_to_supervised(data,time_window,p_day=3):
+def series_to_supervised(data,time_window,p_day):
     #data=stock_zh_a_hist_df
-    #data=all_data_set.copy()
-    #time_window=2
+    #data=historydata.copy()
+    #time_window=5
     #预设n(data_columns)*time_window个列名
     data_columns = ['open','high','low','close']
     data = data[data_columns]  # Note this is important to the important feature choice
@@ -139,6 +147,7 @@ params = {
     'seed':1000,
     'nthread':4,
 }
+
 def predicty(data_set_process,scaled_data,yname,timew,p_day):
     # yname='close'
     # p_day=1
@@ -157,7 +166,7 @@ def predicty(data_set_process,scaled_data,yname,timew,p_day):
     # xgb_test = xgb.DMatrix(test_XGB_X,label = test_XGB_Y)
     xgb_test = xgb.DMatrix(test_XGB_X)
     
-    num_rounds =100
+    num_rounds =150
     #watchlist = [(xgb_test,'eval'),(xgb_train,'train')]
     watchlist = [(xgb_train,'train')]
     
@@ -189,6 +198,7 @@ def predicty(data_set_process,scaled_data,yname,timew,p_day):
     # R2=r2_score(bb[ycol],bb['predict_'+yname])
     return ycol,bb.iloc[-1:,:]
 
+
 def whole(symbol,startdate,enddate,timew,p_day):
     all_data_set=getdata(symbol=symbol,startdate=startdate,enddate=enddate)
     #滞后n期
@@ -214,24 +224,33 @@ def whole(symbol,startdate,enddate,timew,p_day):
     
     return df
 
-import streamlit as st 
 
-#全局配置
-st.set_page_config(
-    page_title="million",    #页面标题
-    page_icon=":rainbow:",        #icon:emoji":rainbow:"
-    layout="wide",                #页面布局
-    initial_sidebar_state="auto"  #侧边栏
-)
+with open("./symparams.txt",encoding='utf-8') as file:
+    symparamsfile =file.read()
+    dictFinal =eval(symparamsfile)
+    symparams =pd.DataFrame.from_dict(dictFinal, orient='columns')
 
+@st.cache_data
+def getname():
+    ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
+        
+    fund_etf=ak.fund_etf_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
+    realtimedata=pd.concat([ashare,fund_etf],axis=0)
+    realtimedata.columns=translatecolname(realtimedata,fromto='cte')
+    return realtimedata
+codedf=getname().loc[lambda x:x["ts_code"].isin(symparams['ts_code'])]
 from pyecharts.charts import Candlestick,Grid
 import streamlit_echarts
 from pyecharts import options as opts
+
+
 def candleplot(symbol,startdate,enddate,timew,p_day):
     df =whole(symbol,startdate,enddate,timew,p_day)#
+    #symbol='600839'
+    name=codedf[codedf['ts_code']==symbol]['name'].sum()
     candle=(Candlestick()
         .add_xaxis(xaxis_data=[i.strftime("%Y-%m-%d") for i in df.index])
-        .add_yaxis(series_name=symbol, y_axis=[list(row) for row in df.values])
+        .add_yaxis(series_name=str(symbol)+' '+str(name), y_axis=[list(row) for row in df.values])
         .set_series_opts()
         .set_global_opts(
             yaxis_opts=opts.AxisOpts(
@@ -243,24 +262,37 @@ def candleplot(symbol,startdate,enddate,timew,p_day):
     ))
     
     grid=Grid()
-    grid.add(candle,grid_opts=opts.GridOpts(pos_left='18%'))
+    grid.add(candle,grid_opts=opts.GridOpts(pos_left='8%'))
     streamlit_echarts.st_pyecharts(grid,key=symbol)
+    return df 
 
 
-with open("./symparams.txt",encoding='utf-8') as file:
-    symparamsfile =file.read()
-    dictFinal =eval(symparamsfile)
-    symparams =pd.DataFrame.from_dict(dictFinal, orient='columns')
 
 import time
 import random
-col1, col2, col3= st.columns(3)
-for i in range(symparams.shape[0]):
-    # i=0
-    ncol=i%3
-    with eval('col'+str(ncol+1)):
-        candleplot(symbol=symparams.iloc[i,0],startdate=symparams.iloc[i,1],enddate=today_str,timew=symparams.iloc[i,2],p_day=symparams.iloc[i,3])
-        time.sleep(random.uniform(1,5))    
+
+tab1, tab2= st.tabs(["价格", "趋势"])
+
+with tab1:
+    st.markdown("https://tsstock.streamlit.app/")
+    
+with tab2:  
+    date_choose=st.date_input(label="choose",value=date.today(),label_visibility="collapsed")
+    today_str=date_choose.strftime("%Y%m%d")
+    if st.button('更新图'):
+        col1, col2, col3= st.columns(3)
+        for i in range(symparams.shape[0]):
+            # i=7
+            ncol=i%3
+            with eval('col'+str(ncol+1)):
+                df=candleplot(symbol=symparams.iloc[i,0],startdate=symparams.iloc[i,1],enddate=today_str,timew=symparams.iloc[i,2],p_day=symparams.iloc[i,3])
+                st.dataframe(df.tail(5),
+                            column_config={
+                                "trade_date": st.column_config.DateColumn(format="YYYY-MM-DD")
+                    })
+                time.sleep(random.uniform(1,5))    
+    else:
+        st.write("")    
 
 
 
