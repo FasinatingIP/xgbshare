@@ -279,8 +279,7 @@ import random
 # with tab2:  
 date_choose=st.date_input(label="choose",value=date.today(),label_visibility="collapsed")
 today_str=date_choose.strftime("%Y%m%d")
-if st.button('更新图'):
-    st.write("hh") 
+if st.button('更新图'): 
     col1, col2, col3= st.columns(3)
     for i in range(symparams.shape[0]):
         # i=7
