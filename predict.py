@@ -271,12 +271,9 @@ def candleplot(symbol,startdate,enddate,timew,p_day):
 import time
 import random
 
-tab1, tab2= st.tabs(["价格", "趋势"])
+tab1, tab2= st.tabs(["趋势","价格"])
 
 with tab1:
-    st.markdown("https://tsstock.streamlit.app/")
-    
-with tab2:  
     date_choose=st.date_input(label="choose",value=date.today(),label_visibility="collapsed")
     today_str=date_choose.strftime("%Y%m%d")
     if st.button('更新图'): 
@@ -290,9 +287,14 @@ with tab2:
                             column_config={
                                 "trade_date": st.column_config.DateColumn(format="YYYY-MM-DD")
                     })
-                time.sleep(random.uniform(1,5))    
+                time.sleep(random.uniform(1,5))
     else:
-        st.write("")    
+        st.write("")  
+    
+with tab2:  
+    st.markdown("https://tsstock.streamlit.app/")
+        
+      
 
 
 
