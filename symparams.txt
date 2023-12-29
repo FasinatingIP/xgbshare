@@ -4,7 +4,6 @@
 {'ts_code':'600171','startdate':'20220101','timew':5,'p_day':3},
 {'ts_code':'603068','startdate':'20220101','timew':5,'p_day':3},
 {'ts_code':'600584','startdate':'20220101','timew':5,'p_day':3},
-{'ts_code':'002642','startdate':'20220101','timew':10,'p_day':3},
 {'ts_code':'600703','startdate':'20220101','timew':5,'p_day':3},
 {'ts_code':'600745','startdate':'20220101','timew':5,'p_day':3},
 {'ts_code':'603005','startdate':'20220101','timew':5,'p_day':3},
