@@ -260,7 +260,7 @@ from pyecharts import options as opts
 def candleplot(symbol,startdate,enddate,timew,p_day):
     df =whole(symbol,startdate,enddate,timew,p_day)#
     #symbol='600839'
-    name=codedf[codedf['code']==symbol]['name'].sum()
+    name=codedf[codedf['ts_code']==symbol]['name'].sum()
     candle=(Candlestick()
         .add_xaxis(xaxis_data=[i.strftime("%Y-%m-%d") for i in df.index])
         .add_yaxis(series_name=str(symbol)+' '+str(name), y_axis=[list(row) for row in df.values])
