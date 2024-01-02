@@ -230,7 +230,7 @@ with open("./symparams.txt",encoding='utf-8') as file:
     dictFinal =eval(symparamsfile)
     symparams =pd.DataFrame.from_dict(dictFinal, orient='columns')
 
-
+@st.cache_data
 def getname():
     ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"   
     fund_etf=ak.fund_etf_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
