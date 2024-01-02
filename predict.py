@@ -8,11 +8,11 @@ Created on Thu Dec 14 14:43:15 2023
 #cd /d H:/git_xgbshare/xgbshare
 #streamlit run predict.py
 import akshare as ak
-from datetime import date,timedelta,datetime
+from datetime import date,timedelta
 import pandas as pd 
-import requests
-import tushare as ts
-pro = ts.pro_api('e79d0344d6ac178e4d5973c42b612c9ed776bc47117c49aa9d3d7b24')
+import tushare 
+
+# pro = ts.pro_api('e79d0344d6ac178e4d5973c42b612c9ed776bc47117c49aa9d3d7b24')
 
 import streamlit as st 
 # import os
@@ -235,7 +235,7 @@ with open("./symparams.txt",encoding='utf-8') as file:
 @st.cache_data
 def get_realtimedata(code):
     #ts.get_realtime_quotes('002370')
-    realtimedata = ts.get_realtime_quotes(code)[['name','time','code']]
+    realtimedata = tushare.get_realtime_quotes(code)[['name','time','code']]
     
     return realtimedata
 
@@ -258,7 +258,7 @@ from pyecharts import options as opts
 def candleplot(symbol,startdate,enddate,timew,p_day):
     df =whole(symbol,startdate,enddate,timew,p_day)#
     #symbol='600839'
-    name=codedf[codedf['ts_code']==symbol]['name'].sum()
+    name=codedf[codedf['code']==symbol]['name'].sum()
     candle=(Candlestick()
         .add_xaxis(xaxis_data=[i.strftime("%Y-%m-%d") for i in df.index])
         .add_yaxis(series_name=str(symbol)+' '+str(name), y_axis=[list(row) for row in df.values])
