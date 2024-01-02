@@ -11,6 +11,7 @@ import akshare as ak
 from datetime import date,timedelta
 import pandas as pd 
 import tushare 
+#print(tushare.__version__)
 
 # pro = ts.pro_api('e79d0344d6ac178e4d5973c42b612c9ed776bc47117c49aa9d3d7b24')
 
