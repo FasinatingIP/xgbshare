@@ -241,14 +241,15 @@ with open("./symparams.txt",encoding='utf-8') as file:
 #     return realtimedata
 
 # codedf=get_realtimedata(code=symparams['ts_code'])
-def getname():
+@st.cache_data
+def getname(fromto):
     ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"   
     fund_etf=ak.fund_etf_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
     realtimedata=pd.concat([ashare,fund_etf],axis=0)
-    realtimedata.columns=translatecolname(realtimedata,fromto='cte')
+    realtimedata.columns=translatecolname(realtimedata,fromto=fromto)
     return realtimedata
 
-realtimedata=getname()
+realtimedata=getname(fromto='cte')
 codedf=realtimedata.loc[lambda x:x["ts_code"].isin(symparams['ts_code'])]
 
 from pyecharts.charts import Candlestick,Grid
