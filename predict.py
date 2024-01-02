@@ -18,7 +18,7 @@ import streamlit as st
 #os.chdir(r'H:\git_xgbshare\xgbshare')
 #全局配置
 st.set_page_config(
-    page_title="million",    #页面标题
+    page_title="up-up-up",    #页面标题
     page_icon=":rainbow:",        #icon:emoji":rainbow:"
     layout="wide",                #页面布局
     initial_sidebar_state="auto"  #侧边栏
@@ -232,13 +232,15 @@ with open("./symparams.txt",encoding='utf-8') as file:
 
 @st.cache_data
 def getname():
-    ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
-        
+    ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"   
     fund_etf=ak.fund_etf_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
     realtimedata=pd.concat([ashare,fund_etf],axis=0)
     realtimedata.columns=translatecolname(realtimedata,fromto='cte')
     return realtimedata
-codedf=getname().loc[lambda x:x["ts_code"].isin(symparams['ts_code'])]
+
+realtimedata=getname()
+codedf=realtimedata.loc[lambda x:x["ts_code"].isin(symparams['ts_code'])]
+
 from pyecharts.charts import Candlestick,Grid
 import streamlit_echarts
 from pyecharts import options as opts
