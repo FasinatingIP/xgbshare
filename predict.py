@@ -233,23 +233,23 @@ with open("./symparams.txt",encoding='utf-8') as file:
     dictFinal =eval(symparamsfile)
     symparams =pd.DataFrame.from_dict(dictFinal, orient='columns')
 
-@st.cache_data
-def get_realtimedata(code):
-    #ts.get_realtime_quotes('002370')
-    realtimedata = tushare.get_realtime_quotes(code)[['name','time','code']]
+# @st.cache_data
+# def get_realtimedata(code):
+#     #ts.get_realtime_quotes('002370')
+#     realtimedata = tushare.get_realtime_quotes(code)[['name','time','code']]
     
-    return realtimedata
-
-codedf=get_realtimedata(code=symparams['ts_code'])
-# def getname():
-#     ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"   
-#     fund_etf=ak.fund_etf_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
-#     realtimedata=pd.concat([ashare,fund_etf],axis=0)
-#     realtimedata.columns=translatecolname(realtimedata,fromto='cte')
 #     return realtimedata
 
-# realtimedata=getname()
-# codedf=realtimedata.loc[lambda x:x["ts_code"].isin(symparams['ts_code'])]
+# codedf=get_realtimedata(code=symparams['ts_code'])
+def getname():
+    ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"   
+    fund_etf=ak.fund_etf_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
+    realtimedata=pd.concat([ashare,fund_etf],axis=0)
+    realtimedata.columns=translatecolname(realtimedata,fromto='cte')
+    return realtimedata
+
+realtimedata=getname()
+codedf=realtimedata.loc[lambda x:x["ts_code"].isin(symparams['ts_code'])]
 
 from pyecharts.charts import Candlestick,Grid
 import streamlit_echarts
