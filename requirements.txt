@@ -5,4 +5,5 @@ requests==2.31.0
 xgboost==2.0.2
 pyecharts==2.0.3
 streamlit_echarts==0.4.0
+tushare==1.2.89
 
