@@ -5,10 +5,11 @@ Created on Thu Dec 14 14:43:15 2023
 @author: pan
 """
 #conda activate streamlit_test
-#cd /d H:/git_xgbshare/xgbshare
+#cd /d d:/xgboost
 #streamlit run predict.py
 import akshare as ak
-from datetime import date,timedelta
+from datetime import date,timedelta,datetime
+
 import pandas as pd 
 # import tushare 
 #print(tushare.__version__)
@@ -18,7 +19,7 @@ import pandas as pd
 import streamlit as st 
 # import os
 # st.write(os.getcwd())   #取得当前工作目录
-#os.chdir(r'H:\git_xgbshare\xgbshare')
+#os.chdir(r'd:/xgboost')
 #全局配置
 st.set_page_config(
     page_title="up-up-up",    #页面标题
@@ -30,6 +31,7 @@ st.set_page_config(
 
 # today = datetime.today()
 # today_str = today.strftime("%Y%m%d")
+# today_str = "20231201"
 
 cte = {"日期":"trade_date","开盘":"open","收盘":"close","最高":"high","最低":"low",
           "成交量":"vol",'最新价':"close","今开":"open",'代码':'ts_code','名称':'name',
@@ -48,7 +50,9 @@ def translatecolname(df,fromto):
 
 
 def getdata(symbol,startdate,enddate):
-    #symbol='588200'
+    #startdate='20220101'
+    #enddate='20240110'
+    #symbol='002642'
     if str(symbol)[0]=="5":
         historydata = ak.fund_etf_hist_em(symbol=symbol, period="daily", start_date=startdate, end_date=enddate, adjust="")
     else:
@@ -56,8 +60,9 @@ def getdata(symbol,startdate,enddate):
         # stock_zh_a_hist_df.info()
         
     historydata.columns=translatecolname(historydata,fromto='cte')
+    
     # type(historydata.trade_date[0])
-    #把日期设为index    
+    #把日期设为index 
     historydata["trade_date"] = pd.to_datetime(historydata["trade_date"])
     historydata.set_index("trade_date", inplace=True, drop=True) # 把index设为索引
 
@@ -71,7 +76,7 @@ def series_to_supervised(data,time_window,p_day):
     #data=historydata.copy()
     #time_window=5
     #预设n(data_columns)*time_window个列名
-    data_columns = ['open','high','low','close']
+    data_columns = ['open','high','low','close','turnover']
     data = data[data_columns]  # Note this is important to the important feature choice
     
     cols, names = list(), list()
@@ -131,7 +136,7 @@ def series_to_supervised(data,time_window,p_day):
             scaled_data[col]= (agg[col]-agg['min'])/(agg['max']-agg['min'])
         else:
             scaled_data[col]=agg.loc[:,col].copy()   
-    return agg,scaled_data
+    return agg,scaled_data,len(data_columns)
 
 #模型
 import xgboost as xgb
@@ -151,18 +156,21 @@ params = {
     'nthread':4,
 }
 
-def predicty(data_set_process,scaled_data,yname,timew,p_day):
+def predicty(data_set_process,scaled_data,yname,timew,p_day,nvar):
+    #data_set_process=agg.copy()
     # yname='close'
     # p_day=1
+    #timew=5
+    #nvar=len(data_columns)
     ycol=yname+'(t+%d)'%abs(p_day)
     
     #pd
-    train_XGB= scaled_data[pd.notna(scaled_data[ycol])]
+    train_XGB= scaled_data[(pd.notna(scaled_data[ycol]))&(pd.notna(scaled_data["open(t-%d)"%timew]))]
     test_XGB = scaled_data[pd.isna(scaled_data[ycol])]
 
     #close(t+1)
-    train_XGB_X, train_XGB_Y = train_XGB.iloc[:,:(timew+1)*4],train_XGB.loc[:,ycol]
-    test_XGB_X, test_XGB_Y = test_XGB.iloc[:,:(timew+1)*4],test_XGB.loc[:,ycol]
+    train_XGB_X, train_XGB_Y = train_XGB.iloc[:,:(timew+1)*nvar],train_XGB.loc[:,ycol]
+    test_XGB_X, test_XGB_Y = test_XGB.iloc[:,:(timew+1)*nvar],test_XGB.loc[:,ycol]
 
     #生成数据集格式
     xgb_train = xgb.DMatrix(train_XGB_X,label = train_XGB_Y)
@@ -198,6 +206,7 @@ def predicty(data_set_process,scaled_data,yname,timew,p_day):
     #转换成股价
     bb['predict_'+yname]=bb['y_pred_xgb_t']*(bb['max']-bb['min'])+bb['min']
     bb.loc[pd.isna(bb[ycol]),ycol]=bb['predict_'+yname]
+    bb=bb.dropna()
     # R2=r2_score(bb[ycol],bb['predict_'+yname])
     return ycol,bb.iloc[-1:,:]
 
@@ -206,14 +215,14 @@ def whole(symbol,startdate,enddate,timew,p_day):
     all_data_set=getdata(symbol=symbol,startdate=startdate,enddate=enddate)
     #滞后n期
     # timew=5
-    data_set_process,scaled_data = series_to_supervised(all_data_set,time_window=timew,p_day=p_day) #取前3天的数据，预测后2天的数据
+    data_set_process,scaled_data,nvar = series_to_supervised(all_data_set,time_window=timew,p_day=p_day) #取前3天的数据，预测后2天的数据
     predictdata=pd.DataFrame()
     for i in range(1,p_day+1):
         # i=1
-        ycol,bb_close=predicty(data_set_process,scaled_data,yname='close',timew=timew,p_day=i)
-        ycol,bb_high=predicty(data_set_process,scaled_data,yname='high',timew=timew,p_day=i)
-        ycol,bb_low=predicty(data_set_process,scaled_data,yname='low',timew=timew,p_day=i)
-        ycol,bb_open=predicty(data_set_process,scaled_data,yname='open',timew=timew,p_day=i)
+        ycol,bb_close=predicty(data_set_process,scaled_data,yname='close',timew=timew,p_day=i,nvar=nvar)
+        ycol,bb_high=predicty(data_set_process,scaled_data,yname='high',timew=timew,p_day=i,nvar=nvar)
+        ycol,bb_low=predicty(data_set_process,scaled_data,yname='low',timew=timew,p_day=i,nvar=nvar)
+        ycol,bb_open=predicty(data_set_process,scaled_data,yname='open',timew=timew,p_day=i,nvar=nvar)
         
         predict=pd.DataFrame({'open':bb_open.loc[:,'open(t+%d)'%i][-1],
                               'close':bb_close.loc[:,'close(t+%d)'%i][-1],
@@ -258,8 +267,13 @@ from pyecharts import options as opts
 
 
 def candleplot(symbol,startdate,enddate,timew,p_day):
+    # today_str = "20231201"
+    # startdate='20220101'
+    # enddate='20231201'
+    # p_day=3
+    # timew=5
     df =whole(symbol,startdate,enddate,timew,p_day)#
-    #symbol='600839'
+    #symbol='588800'
     name=codedf[codedf['ts_code']==symbol]['name'].sum()
     candle=(Candlestick()
         .add_xaxis(xaxis_data=[i.strftime("%Y-%m-%d") for i in df.index])
@@ -292,7 +306,7 @@ with tab1:
     if st.button('更新图'): 
         col1, col2, col3= st.columns(3)
         for i in range(symparams.shape[0]):
-            # i=7
+            # i=15
             ncol=i%3
             with eval('col'+str(ncol+1)):
                 df=candleplot(symbol=symparams.iloc[i,0],startdate=symparams.iloc[i,1],enddate=today_str,timew=symparams.iloc[i,2],p_day=symparams.iloc[i,3])
