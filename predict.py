@@ -11,10 +11,10 @@ import akshare as ak
 from datetime import date,timedelta,datetime
 
 import pandas as pd 
-# import tushare 
+import tushare as ts
 #print(tushare.__version__)
 
-# pro = ts.pro_api('e79d0344d6ac178e4d5973c42b612c9ed776bc47117c49aa9d3d7b24')
+pro = ts.pro_api('e79d0344d6ac178e4d5973c42b612c9ed776bc47117c49aa9d3d7b24')
 
 import streamlit as st 
 # import os
@@ -251,14 +251,14 @@ with open("./symparams.txt",encoding='utf-8') as file:
 
 # codedf=get_realtimedata(code=symparams['ts_code'])
 @st.cache_data
-def getname(fromto):
-    ashare=ak.stock_zh_a_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"   
-    fund_etf=ak.fund_etf_spot_em()[["代码","名称"]]#,'最新价',"今开","最高","最低","换手率"
-    realtimedata=pd.concat([ashare,fund_etf],axis=0)
-    realtimedata.columns=translatecolname(realtimedata,fromto=fromto)
+#获取实时数据
+def get_realtimedata(symbollist):
+    #ts.get_realtime_quotes('002370')
+    realtimedata = ts.get_realtime_quotes(symbollist)[['name','code']]
+    realtimedata.rename(columns={"code":"ts_code"},inplace=True)
     return realtimedata
 
-realtimedata=getname(fromto='cte')
+realtimedata=get_realtimedata(symbollist=symparams['ts_code'])
 codedf=realtimedata.loc[lambda x:x["ts_code"].isin(symparams['ts_code'])]
 
 from pyecharts.charts import Candlestick,Grid
