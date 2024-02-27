@@ -13,4 +13,5 @@
 {'ts_code':'301018','startdate':'20220101','timew':5,'p_day':1},
 {'ts_code':'600318','startdate':'20220101','timew':5,'p_day':1},
 {'ts_code':'000988','startdate':'20220101','timew':5,'p_day':1},
+{'ts_code':'300846','startdate':'20220101','timew':5,'p_day':1},
 {'ts_code':'588030','startdate':'20220101','timew':10,'p_day':1},]
